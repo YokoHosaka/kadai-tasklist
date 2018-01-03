@@ -1,12 +1,14 @@
 @extends('layouts.app')
 @section('content')
     <h1>id = {{ $task -> id }} のタスク詳細ページ</h1>
+        
+        <p>{{ $task => status }} </p>
         <p>{{ $task -> content }} </p>
     
     {!! link_to_route('tasks.edit', 'このタスクの内容を更新', ['id' => $task->id]) !!}
     
-    {!! Form::model($task, ['route' => ['tasks.destroy'. $task->id], 'method' => 'delete']) !!}
+    {!! Form::model($task, ['route' => ['tasks.destroy', $task->id], 'method' => 'delete']) !!}
         {!! Form::submit('削除') !!}
-    [!! From::close() !!}
+    {!! Form::close() !!}
     
 @endsection
