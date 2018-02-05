@@ -3,7 +3,9 @@
 
     <h1>タスク一覧</h1>
     
-    @if (count ($tasks) > 0)
+    @if (Auth::check())
+    
+        @if (count ($tasks) > 0)
     
         <table class="table table-bordered">
             <thread>
@@ -27,7 +29,14 @@
         
      @endif
      
-      {!! link_to_route('signup.get', '今すぐユーザー登録!', null, ['class' => 'btn btn-lg btn-primary']) !!}
-      {!! link_to_route('tasks.create', '新規タスクの登録', null, ['class' => 'btn btn-primary']) !!}
+     {!! link_to_route('tasks.create', '新規タスクの作成', null, ['class' => 'btn btn-primary']) !!}
+        <!-- ここまでログイン済み用 -->
+     
+     @else
+     
+     {!! link_to_route('login.get', 'ログイン', null, ['class' => 'btn btn-primary']) !!}
+       　<!-- ログインしていない場合の初期画面 -->
+      　
+     @endif
     
 @endsection

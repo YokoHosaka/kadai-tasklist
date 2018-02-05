@@ -8,6 +8,7 @@ use App\Http\Requests;
 use App\Http\Controllers\Controller;
 
 use App\Task;
+use App\User;
 
 class TasksController extends Controller
 {
@@ -18,11 +19,21 @@ class TasksController extends Controller
      */
     public function index()
     {
-        $tasks = Task::all();
+        $data = [];
         
-        return view('tasks.index', [
-                'tasks' => $tasks, 
-                ]);
+        if(\Auth::check()){
+            
+            $user = \Auth::user();
+            $tasks = $user->tasks()->get();
+            //$taskの内容はstatusとcontentであるが、それはTaskモデル(Task.php)定義している。
+            // $task = $user->tasks() の記述は ->get()を入れないとユーザにタスクを紐づけただけなのでデータを表示するために取ってくる必要あり
+        
+            $data = [
+                'user' => $user,
+                'tasks' => $tasks,
+                ];
+            }
+        return view('tasks.index', $data);
     }
 
     /**
@@ -32,11 +43,18 @@ class TasksController extends Controller
      */
     public function create()
     {
-        $task =new Task;
+        if(\Auth::check()){
+                
+            $user = \Auth::user();
+            $tasks = new Task;
+            
+            $data = [
+                'user' => $user,
+                'tasks' => $tasks,
+                ];
+        }
         
-        return view('tasks.create', [
-                'task'=> $task, 
-        ]);
+        return view('tasks.create', $data);
     }
 
     /**
@@ -47,17 +65,18 @@ class TasksController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request,[
+            $this->validate($request,[
             'status' => 'required|max:10',
             'content' => 'required|max:255',
-        ]);
+            ]);
         
-        $task = new Task;
-        $task->status = $request->status;
-        $task->content = $request->content;
-        $task->save();
-        
-        return redirect ('/');
+           
+           $request->user()->tasks()->create([
+               'content' => $request->content,
+               'status' => $request->status,
+           ]);
+            
+            return redirect('/');
     }
 
     /**
@@ -68,11 +87,25 @@ class TasksController extends Controller
      */
     public function show($id)
     {
-        $task = Task::Find($id);
+        $user = \Auth::user();
+        $task =Task::find($id);
+        //表示するtaskは一つなので単数形
         
-        return view('tasks.show',[
-            'task'=> $task
-            ]);
+        $data = [];
+     
+        if (\Auth::user()->id == $task->user_id){
+            //ログインしたユーザーのタスクのみ表示する
+        
+            $data = [
+            'user' => $user, 
+            'task' => $task,
+            ];
+        
+            return view('tasks.show', $data);
+            //if節がtrueの時のみ表示し、falseならば表示されない
+        
+            }
+        return redirect('/');
     }
 
     /**
@@ -83,11 +116,21 @@ class TasksController extends Controller
      */
     public function edit($id)
     {
-        $task = Task::find($id);
+        $user = \Auth::user();
+        $task =Task::find($id);
+        //編集するtaskは一つなので単数形
         
-        return view('tasks.edit', [
-             'task' => $task, 
-        ]);
+        if (\Auth::user()->id === $task->user_id){
+            //ログインしたユーザーのタスクのみ編集する 
+            //== は値が同じであればよい。===は型まで同じであることが求められる。
+            
+            $data = [
+                'user' => $user,
+                'task' => $task,
+            ];
+             return view('tasks.edit', $data); 
+        }    
+        return redirect('/');
     }
 
     /**
@@ -120,8 +163,12 @@ class TasksController extends Controller
      */
     public function destroy($id)
     {
-        $task = Task::find($id);
-        $task->delete();
+        $task = \App\Task::find($id);
+        
+        if (\Auth::user()->id === $task->user_id){
+            //== は値が同じであればよい。===は型まで同じであることが求められる。
+                $task->delete();
+        }   
         
         return redirect('/');
     }
